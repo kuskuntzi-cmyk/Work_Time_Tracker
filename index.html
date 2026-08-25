@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#226c3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Work Hours & Pay Tracker</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--bg:#f4f7f5;--card:#fff;--text:#172019;--muted:#667168;--border:#dce4de;--soft:#edf2ee;--accent:#226c3a;--worked:#d7f3de}
+@media(prefers-color-scheme:dark){:root{--bg:#101512;--card:#18201b;--text:#f1f5f2;--muted:#aab5ad;--border:#303b34;--soft:#222b25;--worked:#21472c}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}.app{max-width:1050px;margin:auto;padding:16px}h1{font-size:26px;margin:0}.sub{color:var(--muted);font-size:14px;margin:5px 0 18px}.layout{display:grid;grid-template-columns:1.45fr .8fr;gap:16px}.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px}.box{background:var(--soft);border-radius:14px;padding:12px;margin-bottom:15px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px}input{width:100%;min-height:44px;border:1px solid var(--border);border-radius:10px;padding:9px;background:var(--card);color:var(--text);font-size:16px}button{min-height:44px;border:0;border-radius:12px;padding:10px 14px;font:inherit;cursor:pointer}.primary{width:100%;background:var(--accent);color:white;font-weight:700}.nav{background:var(--soft);color:var(--text);min-width:46px}.monthbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.week,.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.week{font-size:12px;font-weight:700;color:var(--muted);text-align:center;margin-bottom:6px}.day{min-height:70px;background:var(--soft);border:1px solid var(--border);color:var(--text);padding:7px;display:flex;flex-direction:column;justify-content:space-between;text-align:left}.day.worked{background:var(--worked)}.day.selected{outline:3px solid var(--text)}.empty{visibility:hidden}.hrs{font-size:11px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{background:var(--soft);border-radius:12px;padding:10px}.metric span{font-size:11px;color:var(--muted);display:block}.metric strong{font-size:18px}.section{font-size:14px;font-weight:800;margin:0 0 10px}.editor{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}.payline{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:14px}.total{border-top:1px solid var(--border);margin-top:6px;padding-top:12px;font-size:18px;font-weight:800}.note{font-size:12px;color:var(--muted);line-height:1.4}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.secondary{background:var(--soft);color:var(--text);font-weight:700}
+@media(max-width:780px){.layout{grid-template-columns:1fr}.day{min-height:58px}.week,.cal{gap:4px}}
+@media(max-width:400px){.grid2{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="app">
+<h1>Work Hours & Pay Tracker</h1>
+<p class="sub">Tap a day to mark it worked, edit the hours, and calculate pay for a selected pay period.</p>
+<div class="layout">
+<section class="card">
+<div class="box">
+<p class="section">Pay period</p>
+<div class="grid2">
+<div><label for="from">From</label><input id="from" type="date"></div>
+<div><label for="to">To</label><input id="to" type="date"></div>
+</div>
+<p id="periodInfo" class="note"></p>
+</div>
+<div class="monthbar"><button class="nav" id="prev">‹</button><strong id="month"></strong><button class="nav" id="next">›</button></div>
+<div class="week"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div>
+<div id="cal" class="cal"></div>
+<div class="summary">
+<div class="metric"><span>Worked days</span><strong id="days">0</strong></div>
+<div class="metric"><span>Total hours</span><strong id="hours">0.00</strong></div>
+<div class="metric"><span>Gross pay</span><strong id="grossMini">£0.00</strong></div>
+</div>
+<div class="editor">
+<p class="section">Selected day</p>
+<p id="none" class="note">Tap a date to mark it worked and edit its hours.</p>
+<div id="editor" hidden class="grid2">
+<div><label>Date</label><input id="selectedDate" readonly></div>
+<div><label>Hours for this day</label><input id="dayHours" type="number" min="0" max="24" step="0.25"></div>
+</div>
+</div>
+</section>
+
+<aside class="card">
+<p class="section">Pay & tax settings</p>
+<div class="grid2">
+<div><label>Default hours/day</label><input id="defaultHours" type="number" min="0" max="24" step="0.25" value="8"></div>
+<div><label>Hourly rate (£)</label><input id="hourlyRate" type="number" min="0" step="0.01" value="15"></div>
+<div><label>Annual tax-free allowance (£)</label><input id="allowance" type="number" min="0" step="1" value="12570"></div>
+<div><label>Income tax (%)</label><input id="taxRate" type="number" min="0" max="100" step="0.1" value="20"></div>
+<div><label>NI (%)</label><input id="niRate" type="number" min="0" max="100" step="0.1" value="8"></div>
+<div><label>Pension (%)</label><input id="pensionRate" type="number" min="0" max="100" step="0.1" value="0"></div>
+<div><label>Other deduction (£)</label><input id="other" type="number" min="0" step="0.01" value="0"></div>
+</div>
+<button class="primary" id="calc" style="margin-top:14px">Calculate Pay</button>
+<div style="margin-top:12px">
+<div class="payline"><span>Pay period</span><strong id="periodLabel">—</strong></div>
+<div class="payline"><span>Worked hours</span><strong id="payHours">0.00</strong></div>
+<div class="payline"><span>Gross pay</span><strong id="gross">£0.00</strong></div>
+<div class="payline"><span>Tax-free allowance used</span><strong id="allowUsed">£0.00</strong></div>
+<div class="payline"><span>Taxable pay</span><strong id="taxable">£0.00</strong></div>
+<div class="payline"><span>Estimated tax</span><strong id="tax">− £0.00</strong></div>
+<div class="payline"><span>Estimated NI</span><strong id="ni">− £0.00</strong></div>
+<div class="payline"><span>Pension</span><strong id="pension">− £0.00</strong></div>
+<div class="payline"><span>Other</span><strong id="otherOut">− £0.00</strong></div>
+<div class="payline total"><span>Estimated take-home</span><strong id="net">£0.00</strong></div>
+</div>
+<div class="actions"><button id="clearPeriod" class="secondary">Clear period days</button><button id="reset" class="secondary">Reset all data</button></div>
+<p class="note">Your data is saved in this browser on this device. The tax result is an estimate, not a full UK PAYE payroll calculation.</p>
+</aside>
+</div>
+</main>
+<script>
+(()=>{
+const KEY="work-hours-tracker-v1", $=id=>document.getElementById(id), now=new Date();
+const state={year:now.getFullYear(),month:now.getMonth(),worked:{},selected:null};
+const ids=["defaultHours","hourlyRate","allowance","taxRate","niRate","pensionRate","other"];
+const pad=n=>String(n).padStart(2,"0"), k=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
+const money=n=>"£"+Math.max(0,n).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+const val=(id,min=0,max=1e9)=>{let n=parseFloat($(id).value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):0};
+const parse=s=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;let [y,m,d]=s.split("-").map(Number);return new Date(Date.UTC(y,m-1,d))};
+const iso=d=>`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
+const fmt=d=>new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}).format(d);
+function load(){try{let x=JSON.parse(localStorage.getItem(KEY)||"{}");state.worked=x.worked||{};ids.forEach(id=>{if(x.settings&&x.settings[id]!=null)$(id).value=x.settings[id]})}catch(e){}}
+function save(){let settings={};ids.forEach(id=>settings[id]=val(id));localStorage.setItem(KEY,JSON.stringify({worked:state.worked,settings}))}
+function period(){let a=parse($("from").value),b=parse($("to").value);return a&&b&&a<=b?{a,b}:null}
+function entries(){let p=period();if(!p)return[];return Object.entries(state.worked).filter(([key])=>{let d=parse(key);return d>=p.a&&d<=p.b})}
+function allowanceForPeriod(){let p=period();if(!p)return 0;let total=0,d=new Date(p.a),annual=val("allowance");while(d<=p.b){let y=d.getUTCFullYear(),leap=(y%4===0&&y%100!==0)||y%400===0;total+=annual/(leap?366:365);d=new Date(d.getTime()+86400000)}return total}
+function calc(){
+ let p=period(), e=entries(), hrs=e.reduce((s,[,v])=>s+Number(v||0),0), gross=hrs*val("hourlyRate");
+ let allow=allowanceForPeriod(), used=Math.min(gross,allow), taxable=Math.max(0,gross-allow);
+ let tax=taxable*val("taxRate",0,100)/100, ni=gross*val("niRate",0,100)/100, pen=gross*val("pensionRate",0,100)/100, other=val("other"), net=Math.max(0,gross-tax-ni-pen-other);
+ $("days").textContent=e.length;$("hours").textContent=hrs.toFixed(2);$("grossMini").textContent=money(gross);
+ $("payHours").textContent=hrs.toFixed(2);$("gross").textContent=money(gross);$("allowUsed").textContent=money(used);$("taxable").textContent=money(taxable);
+ $("tax").textContent="− "+money(tax);$("ni").textContent="− "+money(ni);$("pension").textContent="− "+money(pen);$("otherOut").textContent="− "+money(other);$("net").textContent=money(net);
+ $("periodLabel").textContent=p?`${fmt(p.a)} – ${fmt(p.b)}`:"Invalid";
+ $("periodInfo").textContent=p?`${fmt(p.a)} to ${fmt(p.b)}`:"Choose a valid From and To date.";
+}
+function render(){
+ $("month").textContent=new Intl.DateTimeFormat("en-GB",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(state.year,state.month,1)));
+ let cal=$("cal");cal.innerHTML="";let first=new Date(Date.UTC(state.year,state.month,1)),days=new Date(Date.UTC(state.year,state.month+1,0)).getUTCDate(),off=(first.getUTCDay()+6)%7;
+ for(let i=0;i<off;i++){let e=document.createElement("div");e.className="day empty";cal.appendChild(e)}
+ for(let d=1;d<=days;d++){let key=k(state.year,state.month,d),worked=Object.prototype.hasOwnProperty.call(state.worked,key),b=document.createElement("button");b.type="button";b.className="day"+(worked?" worked":"")+(state.selected===key?" selected":"");b.innerHTML=`<strong>${d}</strong><span class="hrs">${worked?Number(state.worked[key]).toFixed(2)+" hrs":"Tap to mark"}</span>`;b.onclick=()=>{if(worked){delete state.worked[key];state.selected=null}else{state.worked[key]=val("defaultHours",0,24);state.selected=key}save();render()};cal.appendChild(b)}
+ let active=state.selected&&Object.prototype.hasOwnProperty.call(state.worked,state.selected);$("editor").hidden=!active;$("none").hidden=!!active;if(active){$("selectedDate").value=fmt(parse(state.selected));$("dayHours").value=state.worked[state.selected]}
+ calc();
+}
+$("prev").onclick=()=>{state.month--;if(state.month<0){state.month=11;state.year--}state.selected=null;render()};
+$("next").onclick=()=>{state.month++;if(state.month>11){state.month=0;state.year++}state.selected=null;render()};
+$("from").onchange=render;$("to").onchange=render;$("calc").onclick=calc;
+$("dayHours").onchange=()=>{if(!state.selected)return;let n=val("dayHours",0,24);state.worked[state.selected]=n;save();render()};
+ids.forEach(id=>$(id).onchange=()=>{save();calc()});
+$("clearPeriod").onclick=()=>{let p=period();if(!p||!confirm("Clear all worked days in the selected pay period?"))return;Object.keys(state.worked).forEach(key=>{let d=parse(key);if(d>=p.a&&d<=p.b)delete state.worked[key]});state.selected=null;save();render()};
+$("reset").onclick=()=>{if(confirm("Reset all saved data?")){localStorage.removeItem(KEY);location.reload()}};
+load();let first=new Date(Date.UTC(now.getFullYear(),now.getMonth(),1)),last=new Date(Date.UTC(now.getFullYear(),now.getMonth()+1,0));$("from").value=iso(first);$("to").value=iso(last);render();
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+})();
+</script>
+</body>
+</html>
