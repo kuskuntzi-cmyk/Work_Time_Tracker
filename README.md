@@ -1,4 +1,4 @@
-# Work Hours & Pay Tracker
+# Work Hours & Pay Tracker...
 
 Upload these files to the root of your GitHub repository:
 
